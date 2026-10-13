@@ -32,8 +32,9 @@ namespace DomainAppointerPro.DomainAppointer
       }
 
       string code = settings.GetCodeForSlot(slot);
-      // Empty string for a non-Null slot means "not mapped"  do nothing.
-      // For Null slot, empty/null means clear the value.
+      // Empty string for a non-Null slot means "not mapped" — do nothing.
+      // Null with a mapped code writes that code (e.g. N/A on a non-nullable field).
+      // Null with no mapping clears the attribute (database null).
       bool isNullSlot = string.Equals(slot, "Null", StringComparison.OrdinalIgnoreCase);
       if (!isNullSlot && string.IsNullOrEmpty(code))
       {
@@ -97,9 +98,9 @@ namespace DomainAppointerPro.DomainAppointer
               return;
             }
 
-            if (isNullSlot || string.IsNullOrEmpty(code))
+            if (string.IsNullOrEmpty(code))
             {
-              valueToWrite = null; // clears the attribute
+              valueToWrite = null; // unmapped Null slot: clear the attribute
             }
             else
             {
@@ -128,7 +129,7 @@ namespace DomainAppointerPro.DomainAppointer
         if (oidsToEdit.Count == 0)
           return;
 
-        string opName = isNullSlot
+        string opName = string.IsNullOrEmpty(code)
           ? $"Domain Appointer: clear {settings.FieldName}"
           : $"Domain Appointer: set {settings.FieldName} = {code}";
 

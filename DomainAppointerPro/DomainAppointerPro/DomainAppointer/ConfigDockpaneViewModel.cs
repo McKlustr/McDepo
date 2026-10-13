@@ -6,7 +6,6 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using ArcGIS.Core.Data;
 using ArcGIS.Desktop.Framework;
 using ArcGIS.Desktop.Framework.Contracts;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
@@ -171,15 +170,7 @@ namespace DomainAppointerPro.DomainAppointer
           using (var table = fl.GetTable())
           {
             if (table == null) return;
-            var def = table.GetDefinition();
-            foreach (var field in def.GetFields())
-            {
-              var domain = field.GetDomain();
-              if (domain is CodedValueDomain)
-              {
-                fieldsWithDomain.Add(field.Name);
-              }
-            }
+            fieldsWithDomain.AddRange(DomainLookup.GetCodedDomainFieldNames(table));
           }
         }
         catch { }
@@ -222,23 +213,7 @@ namespace DomainAppointerPro.DomainAppointer
 
           using (var table = fl.GetTable())
           {
-            var def = table.GetDefinition();
-            var field = def.GetFields().FirstOrDefault(f =>
-              string.Equals(f.Name, SelectedFieldName, StringComparison.OrdinalIgnoreCase));
-            if (field == null) return;
-
-            var domain = field.GetDomain() as CodedValueDomain;
-            if (domain == null) return;
-
-            var pairs = domain.GetCodedValuePairs();
-            foreach (var kvp in pairs)
-            {
-              codes.Add(new DomainCodeItem
-              {
-                Code = kvp.Key?.ToString() ?? "",
-                Description = kvp.Value ?? ""
-              });
-            }
+            codes.AddRange(DomainLookup.GetCodedValues(table, SelectedFieldName));
           }
         }
         catch { }
@@ -246,11 +221,14 @@ namespace DomainAppointerPro.DomainAppointer
         System.Windows.Application.Current.Dispatcher.Invoke(() =>
         {
           AvailableCodes.Clear();
-          foreach (var c in codes.OrderBy(x => x.Code))
+          AvailableCodes.Add(DomainCodeItem.Unmapped);
+          foreach (var c in codes)
             AvailableCodes.Add(c);
 
           BuildSlotMappings();
-          StatusMessage = $"Domain has {codes.Count} coded value(s). Map them to slots below.";
+          StatusMessage = codes.Count == 0
+            ? "No coded values found for this field (including subtype domains)."
+            : $"Domain has {codes.Count} coded value(s) (including subtype domains). Map them to slots below.";
         });
       });
     }
@@ -333,9 +311,25 @@ namespace DomainAppointerPro.DomainAppointer
 
   public class DomainCodeItem
   {
+    public static DomainCodeItem Unmapped { get; } = new DomainCodeItem
+    {
+      Code = "",
+      Description = "(unmapped)"
+    };
+
     public string Code { get; set; }
     public string Description { get; set; }
-    public string Display => string.IsNullOrEmpty(Description) ? Code : $"{Code}  –  {Description}";
+    public string Display
+    {
+      get
+      {
+        if (string.IsNullOrEmpty(Code))
+          return string.IsNullOrEmpty(Description) ? "(unmapped)" : Description;
+        if (string.IsNullOrEmpty(Description))
+          return Code;
+        return $"{Code}  –  {Description}";
+      }
+    }
     public override string ToString() => Display;
   }
 

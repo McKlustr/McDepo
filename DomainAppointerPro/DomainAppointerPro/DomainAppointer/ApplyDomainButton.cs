@@ -13,8 +13,9 @@ namespace DomainAppointerPro.DomainAppointer
   {
     protected override void OnUpdate()
     {
-      // Enable only when a map is active, settings exist, and the slot is mapped
-      // (Null is always considered "mapped" so the clear action stays available once configured).
+      // Enable only when a map is active, settings exist, and the slot is mapped.
+      // Null stays enabled once configured: unmapped Null clears the field,
+      // mapped Null writes that domain code.
       bool enabled = false;
       try
       {

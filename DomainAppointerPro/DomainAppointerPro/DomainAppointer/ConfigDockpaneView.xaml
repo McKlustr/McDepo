@@ -79,27 +79,37 @@
 
     <!-- Slot mappings -->
     <GroupBox Grid.Row="3" Header="Map Domain Codes to Slots (00-19 + Null)" Padding="6">
-      <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <ItemsControl ItemsSource="{Binding SlotMappings}">
-          <ItemsControl.ItemTemplate>
-            <DataTemplate>
-              <Grid Margin="0,3">
-                <Grid.ColumnDefinitions>
-                  <ColumnDefinition Width="50"/>
-                  <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-                <TextBlock Text="{Binding Slot}" VerticalAlignment="Center" FontWeight="SemiBold"/>
-                <ComboBox Grid.Column="1"
-                          ItemsSource="{Binding AvailableCodes}"
-                          SelectedValue="{Binding SelectedCode, Mode=TwoWay}"
-                          SelectedValuePath="Code"
-                          DisplayMemberPath="Display"
-                          IsEditable="False"/>
-              </Grid>
-            </DataTemplate>
-          </ItemsControl.ItemTemplate>
-        </ItemsControl>
-      </ScrollViewer>
+      <DockPanel>
+        <TextBlock DockPanel.Dock="Top" TextWrapping="Wrap" Foreground="#333333" FontSize="11" Margin="0,0,0,6"
+                   Text="Pick (unmapped) or Clear to remove a slot mapping. Null with no mapping clears the field; map a code to Null to write that coded value (use this for non-nullable N/A / Unknown domains)."/>
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+          <ItemsControl ItemsSource="{Binding SlotMappings}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Grid Margin="0,3">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="50"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Text="{Binding Slot}" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                  <ComboBox Grid.Column="1"
+                            ItemsSource="{Binding AvailableCodes}"
+                            SelectedValue="{Binding SelectedCode, Mode=TwoWay}"
+                            SelectedValuePath="Code"
+                            DisplayMemberPath="Display"
+                            IsEditable="False"/>
+                  <Button Grid.Column="2" Content="Clear"
+                          Command="{Binding DataContext.ClearSlotCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                          CommandParameter="{Binding Slot}"
+                          ToolTip="Unmap this slot"
+                          MinWidth="56"/>
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
+      </DockPanel>
     </GroupBox>
 
     <!-- Save -->
