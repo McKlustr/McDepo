@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ArcGIS defaultAssembly="DomainAppointerPro.dll" defaultNamespace="DomainAppointerPro" xmlns="http://schemas.esri.com/DADF/Registry" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://schemas.esri.com/DADF/Registry file:///C:/Program%20Files/ArcGIS/Pro/bin/ArcGIS.Desktop.Framework.xsd">
+  <AddInInfo id="{B8E4F2A1-9C3D-4E7F-A1B2-C5D6E7F8A9B0}" version="1.0.1" desktopVersion="3.0.36056">
+    <Name>Domain Appointer Pro</Name>
+    <Description>Assign coded domain values to selected features via toolbar buttons and keyboard shortcuts. Port of the ArcMap RS_Tools Domain Appointer.</Description>
+    <Image>Images\DomainAppointer\DomainAppointer.png</Image>
+    <Author>DomainAppointerPro</Author>
+    <Company></Company>
+    <Date>9/29/2026</Date>
+    <Subject>Editing</Subject>
+  </AddInInfo>
+
+  <modules>
+    <insertModule id="DomainAppointerPro_Module" className="Module1" autoLoad="true" caption="Domain Appointer Pro">
+      <tabs>
+      </tabs>
+
+      <groups>
+        <group id="DomainAppointerPro_Group" caption="Domain Appointer" appearsOnAddInTab="true">
+          <button refID="DomainAppointerPro_Launcher" size="large" />
+          <button refID="DomainAppointerPro_Domain_Null" size="middle" />
+          <button refID="DomainAppointerPro_Domain_00" size="middle" />
+          <button refID="DomainAppointerPro_Domain_01" size="middle" />
+          <button refID="DomainAppointerPro_Domain_02" size="middle" />
+          <button refID="DomainAppointerPro_Domain_03" size="middle" />
+          <button refID="DomainAppointerPro_Domain_04" size="middle" />
+          <button refID="DomainAppointerPro_Domain_05" size="middle" />
+          <button refID="DomainAppointerPro_Domain_06" size="middle" />
+          <button refID="DomainAppointerPro_Domain_07" size="middle" />
+          <button refID="DomainAppointerPro_Domain_08" size="middle" />
+          <button refID="DomainAppointerPro_Domain_09" size="middle" />
+          <button refID="DomainAppointerPro_Domain_10" size="middle" />
+          <button refID="DomainAppointerPro_Domain_11" size="middle" />
+          <button refID="DomainAppointerPro_Domain_12" size="middle" />
+          <button refID="DomainAppointerPro_Domain_13" size="middle" />
+          <button refID="DomainAppointerPro_Domain_14" size="middle" />
+          <button refID="DomainAppointerPro_Domain_15" size="middle" />
+          <button refID="DomainAppointerPro_Domain_16" size="middle" />
+          <button refID="DomainAppointerPro_Domain_17" size="middle" />
+          <button refID="DomainAppointerPro_Domain_18" size="middle" />
+          <button refID="DomainAppointerPro_Domain_19" size="middle" />
+        </group>
+      </groups>
+
+      <controls>
+        <button id="DomainAppointerPro_Launcher"
+                caption="Domain Appointer"
+                className="DomainAppointer.LauncherButton"
+                loadOnClick="true"
+                smallImage="Images\DomainAppointer\DomainAppointerLauncher.png"
+                largeImage="Images\DomainAppointer\DomainAppointerLauncher.png"
+                keytip="DA">
+          <tooltip heading="Domain Appointer">
+            Open configuration. Select layer, field, and map domain codes to slots 00-19 + Null.
+            <disabledText>Map must be active</disabledText>
+          </tooltip>
+        </button>
+
+        <button id="DomainAppointerPro_Domain_Null"
+                caption="Null"
+                className="DomainAppointer.ApplyDomainButton"
+                loadOnClick="true"
+                smallImage="Images\DomainAppointer\Domain_Null.png"
+                largeImage="Images\DomainAppointer\Domain_Null.png">
+          <tooltip heading="Assign Null">
+            Assign null / clear value to selected features for the configured domain field.
+          </tooltip>
+        </button>
+
+        <button id="DomainAppointerPro_Domain_00" caption="00" className="DomainAppointer.ApplyDomainButton" loadOnClick="true" smallImage="Images\DomainAppointer\Domain_00.png" largeImage="Images\DomainAppointer\Domain_00.png">
+          <tooltip heading="Assign Domain 00"><disabledText>Not configured</disabledText></tooltip>
+        </button>
+        <button id="DomainAppointerPro_Domain_01" caption="01" className="DomainAppointer.ApplyDomainButton" loadOnClick="true" smallImage="Images\DomainAppointer\Domain_01.png" largeImage="Images\DomainAppointer\Domain_01.png">
+          <tooltip heading="Assign Domain 01"><disabledText>Not configured</disabledText></tooltip>
+        </button>
+        <button id="DomainAppointerPro_Domain_02" caption="02" className="DomainAppointer.ApplyDomainButton" loadOnClick="true" smallImage="Images\DomainAppointer\Domain_02.png" largeImage="Images\DomainAppointer\Domain_02.png">
+          <tooltip heading="Assign Domain 02"><disabledText>Not configured</disabledText></tooltip>
+        </button>
+        <button id="DomainAppointerPro_Domain_03" caption="03" className="DomainAppointer.ApplyDomainButton" loadOnClick="true" smallImage="Images\DomainAppointer\Domain_03.png" largeImage="Images\DomainAppointer\Domain_03.png">
+          <tooltip heading="Assign Domain 03"><disabledText>Not configured</disabledText></tooltip>
+        </button>
+        <button id="DomainAppointerPro_Domain_04" caption="04" className="DomainAppointer.ApplyDomainButton" loadOnClick="true" smallImage="Images\DomainAppointer\Domain_04.png" largeImage="Images\DomainAppointer\Domain_04.png">
+          <tooltip heading="Assign Domain 04"><disabledText>Not configured</disabledText></tooltip>
+        </button>
+        <button id="DomainAppointerPro_Domain_05" caption="05" className="DomainAppointer.ApplyDomainButton" loadOnClick="true" smallImage="Images\DomainAppointer\Domain_05.png" largeImage="Images\DomainAppointer\Domain_05.png">
+          <tooltip heading="Assign Domain 05"><disabledText>Not configured</disabledText></tooltip>
+        </button>
+        <button id="DomainAppointerPro_Domain_06" caption="06" className="DomainAppointer.ApplyDomainButton" loadOnClick="true" smallImage="Images\DomainAppointer\Domain_06.png" largeImage="Images\DomainAppointer\Domain_06.png">
+          <tooltip heading="Assign Domain 06"><disabledText>Not configured</disabledText></tooltip>
+        </button>
+        <button id="DomainAppointerPro_Domain_07" caption="07" className="DomainAppointer.ApplyDomainButton" loadOnClick="true" smallImage="Images\DomainAppointer\Domain_07.png" largeImage="Images\DomainAppointer\Domain_07.png">
+          <tooltip heading="Assign Domain 07"><disabledText>Not configured</disabledText></tooltip>
+        </button>
+        <button id="DomainAppointerPro_Domain_08" caption="08" className="DomainAppointer.ApplyDomainButton" loadOnClick="true" smallImage="Images\DomainAppointer\Domain_08.png" largeImage="Images\DomainAppointer\Domain_08.png">
+          <tooltip heading="Assign Domain 08"><disabledText>Not configured</disabledText></tooltip>
+        </button>
+        <button id="DomainAppointerPro_Domain_09" caption="09" className="DomainAppointer.ApplyDomainButton" loadOnClick="true" smallImage="Images\DomainAppointer\Domain_09.png" largeImage="Images\DomainAppointer\Domain_09.png">
+          <tooltip heading="Assign Domain 09"><disabledText>Not configured</disabledText></tooltip>
+        </button>
+        <button id="DomainAppointerPro_Domain_10" caption="10" className="DomainAppointer.ApplyDomainButton" loadOnClick="true" smallImage="Images\DomainAppointer\Domain_10.png" largeImage="Images\DomainAppointer\Domain_10.png">
+          <tooltip heading="Assign Domain 10"><disabledText>Not configured</disabledText></tooltip>
+        </button>
+        <button id="DomainAppointerPro_Domain_11" caption="11" className="DomainAppointer.ApplyDomainButton" loadOnClick="true" smallImage="Images\DomainAppointer\Domain_11.png" largeImage="Images\DomainAppointer\Domain_11.png">
+          <tooltip heading="Assign Domain 11"><disabledText>Not configured</disabledText></tooltip>
+        </button>
+        <button id="DomainAppointerPro_Domain_12" caption="12" className="DomainAppointer.ApplyDomainButton" loadOnClick="true" smallImage="Images\DomainAppointer\Domain_12.png" largeImage="Images\DomainAppointer\Domain_12.png">
+          <tooltip heading="Assign Domain 12"><disabledText>Not configured</disabledText></tooltip>
+        </button>
+        <button id="DomainAppointerPro_Domain_13" caption="13" className="DomainAppointer.ApplyDomainButton" loadOnClick="true" smallImage="Images\DomainAppointer\Domain_13.png" largeImage="Images\DomainAppointer\Domain_13.png">
+          <tooltip heading="Assign Domain 13"><disabledText>Not configured</disabledText></tooltip>
+        </button>
+        <button id="DomainAppointerPro_Domain_14" caption="14" className="DomainAppointer.ApplyDomainButton" loadOnClick="true" smallImage="Images\DomainAppointer\Domain_14.png" largeImage="Images\DomainAppointer\Domain_14.png">
+          <tooltip heading="Assign Domain 14"><disabledText>Not configured</disabledText></tooltip>
+        </button>
+        <button id="DomainAppointerPro_Domain_15" caption="15" className="DomainAppointer.ApplyDomainButton" loadOnClick="true" smallImage="Images\DomainAppointer\Domain_15.png" largeImage="Images\DomainAppointer\Domain_15.png">
+          <tooltip heading="Assign Domain 15"><disabledText>Not configured</disabledText></tooltip>
+        </button>
+        <button id="DomainAppointerPro_Domain_16" caption="16" className="DomainAppointer.ApplyDomainButton" loadOnClick="true" smallImage="Images\DomainAppointer\Domain_16.png" largeImage="Images\DomainAppointer\Domain_16.png">
+          <tooltip heading="Assign Domain 16"><disabledText>Not configured</disabledText></tooltip>
+        </button>
+        <button id="DomainAppointerPro_Domain_17" caption="17" className="DomainAppointer.ApplyDomainButton" loadOnClick="true" smallImage="Images\DomainAppointer\Domain_17.png" largeImage="Images\DomainAppointer\Domain_17.png">
+          <tooltip heading="Assign Domain 17"><disabledText>Not configured</disabledText></tooltip>
+        </button>
+        <button id="DomainAppointerPro_Domain_18" caption="18" className="DomainAppointer.ApplyDomainButton" loadOnClick="true" smallImage="Images\DomainAppointer\Domain_18.png" largeImage="Images\DomainAppointer\Domain_18.png">
+          <tooltip heading="Assign Domain 18"><disabledText>Not configured</disabledText></tooltip>
+        </button>
+        <button id="DomainAppointerPro_Domain_19" caption="19" className="DomainAppointer.ApplyDomainButton" loadOnClick="true" smallImage="Images\DomainAppointer\Domain_19.png" largeImage="Images\DomainAppointer\Domain_19.png">
+          <tooltip heading="Assign Domain 19"><disabledText>Not configured</disabledText></tooltip>
+        </button>
+      </controls>
+
+      <dockPanes>
+        <dockPane id="DomainAppointerPro_ConfigPane"
+                  caption="Domain Appointer Config"
+                  className="DomainAppointer.ConfigDockpaneViewModel"
+                  dock="float"
+                  initiallyVisible="false"
+                  smallImage="Images\DomainAppointer\DomainAppointerLauncher.png"
+                  height="520"
+                  width="480">
+          <content className="DomainAppointer.ConfigDockpaneView" />
+          <tooltip heading="Domain Appointer Configuration">
+            Configure target layer, field, and domain code mappings.
+          </tooltip>
+        </dockPane>
+      </dockPanes>
+    </insertModule>
+  </modules>
+</ArcGIS>
