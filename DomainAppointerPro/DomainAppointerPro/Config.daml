@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ArcGIS defaultAssembly="DomainAppointerPro.dll" defaultNamespace="DomainAppointerPro" xmlns="http://schemas.esri.com/DADF/Registry" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://schemas.esri.com/DADF/Registry file:///C:/Program%20Files/ArcGIS/Pro/bin/ArcGIS.Desktop.Framework.xsd">
-  <AddInInfo id="{B8E4F2A1-9C3D-4E7F-A1B2-C5D6E7F8A9B0}" version="1.0.2" desktopVersion="3.0.36056">
+  <AddInInfo id="{B8E4F2A1-9C3D-4E7F-A1B2-C5D6E7F8A9B0}" version="1.0.3" desktopVersion="3.0.36056">
     <Name>Domain Appointer Pro</Name>
     <Description>Assign coded domain values to selected features via toolbar buttons and keyboard shortcuts. Port of the ArcMap RS_Tools Domain Appointer.</Description>
     <Image>Images\DomainAppointer\DomainAppointer.png</Image>

@@ -17,6 +17,8 @@ Buttons for unmapped slots stay disabled. Null is always available once a layer/
 
 To unmap a slot, choose **(unmapped)** in the dropdown or click **Clear**, then save.
 
+Reopening the config pane keeps unsaved slot edits; it only refreshes the layer list. Duplicate layer names are disambiguated with the layer URI. Config and apply both resolve the layer by URI first, then name.
+
 ## Requirements
 
 - ArcGIS Pro 3.0 or later
@@ -51,6 +53,7 @@ DomainAppointerPro/
   DomainAppointer/
     DomainSettings.cs                  Persistent mapping storage (%AppData%)
     DomainLookup.cs                    Coded-value domains including per-subtype assignments
+    LayerResolver.cs                   Find layers by URI then name; list layers for the config combo
     ApplyDomainService.cs              Core logic that writes the attribute via EditOperation
     ApplyDomainButton.cs               Shared button for slots 00-19 / Null (enablement + click)
     LauncherButton.cs                  Opens the config dockpane
@@ -65,4 +68,4 @@ DomainAppointerPro/
 - The layer must be present and selectable in the active map.
 - Edits participate in the Pro edit session / undo stack via `EditOperation` + `Inspector`.
 - If the field type is numeric, the code string is converted automatically when possible.
-- Layer is resolved first by URI (stable across renames), then by name.
+- Layer is resolved first by URI (stable across renames), then by name, in both the config pane and apply.
