@@ -51,7 +51,7 @@ namespace DomainAppointerPro.DomainAppointer
       ApplyOutcome outcome;
       try
       {
-        outcome = await QueuedTask.Run(() => ApplyOnMct(settings, code, isNullSlot));
+        outcome = await QueuedTask.Run(() => ApplyOnMct(settings, code));
       }
       catch (Exception ex)
       {
@@ -148,12 +148,7 @@ namespace DomainAppointerPro.DomainAppointer
       // with "No edits producing database changes were found" when nothing changes.
       var oidsToEdit = OidsNeedingChange(fl, fieldName, oidSet, valueToWrite);
       if (oidsToEdit.Count == 0)
-      {
-        outcome.Info = isNullSlot && string.IsNullOrEmpty(code)
-          ? "All selected features already have a null value for this field."
-          : "All selected features already have this value.";
         return outcome;
-      }
 
       string opName = string.IsNullOrEmpty(code)
         ? $"Domain Appointer: clear {fieldName}"
@@ -183,10 +178,7 @@ namespace DomainAppointerPro.DomainAppointer
       {
         string err = editOp.ErrorMessage ?? "";
         if (err.IndexOf("No edits producing database changes", StringComparison.OrdinalIgnoreCase) >= 0)
-        {
-          outcome.Info = "All selected features already have this value.";
           return outcome;
-        }
 
         if (!string.IsNullOrEmpty(err))
           outcome.Error = $"Edit failed:\n{err}";
