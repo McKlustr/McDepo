@@ -1,7 +1,8 @@
 using System;
-using System.Threading.Tasks;
+using System.Windows;
 using ArcGIS.Desktop.Framework.Contracts;
 using ArcGIS.Desktop.Mapping;
+using MessageBox = ArcGIS.Desktop.Framework.Dialogs.MessageBox;
 
 namespace DomainAppointerPro.DomainAppointer
 {
@@ -13,8 +14,9 @@ namespace DomainAppointerPro.DomainAppointer
   {
     protected override void OnUpdate()
     {
-      // Enable only when a map is active, settings exist, and the slot is mapped
-      // (Null is always considered "mapped" so the clear action stays available once configured).
+      // Enable only when a map is active, settings exist, and the slot is mapped.
+      // Null stays enabled once configured: unmapped Null clears the field,
+      // mapped Null writes that domain code.
       bool enabled = false;
       try
       {
@@ -39,11 +41,22 @@ namespace DomainAppointerPro.DomainAppointer
 
     protected override async void OnClick()
     {
-      string slot = ExtractSlotFromId(this.ID);
-      if (string.IsNullOrEmpty(slot))
-        return;
+      try
+      {
+        string slot = ExtractSlotFromId(this.ID);
+        if (string.IsNullOrEmpty(slot))
+          return;
 
-      await ApplyDomainService.ApplyAsync(slot);
+        await ApplyDomainService.ApplyAsync(slot);
+      }
+      catch (Exception ex)
+      {
+        MessageBox.Show(
+          $"Domain Appointer failed:\n{ex.Message}",
+          "Domain Appointer",
+          MessageBoxButton.OK,
+          MessageBoxImage.Error);
+      }
     }
 
     private static string ExtractSlotFromId(string buttonId)

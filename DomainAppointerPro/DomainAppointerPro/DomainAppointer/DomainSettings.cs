@@ -75,8 +75,11 @@ namespace DomainAppointerPro.DomainAppointer
         Current.SlotToDescription["Null"] = "Null / Clear";
     }
 
-    public static void Save()
+    public static bool Save() => Save(out _);
+
+    public static bool Save(out string error)
     {
+      error = null;
       try
       {
         if (!Directory.Exists(SettingsFolder))
@@ -85,10 +88,13 @@ namespace DomainAppointerPro.DomainAppointer
         var options = new JsonSerializerOptions { WriteIndented = true };
         var json = JsonSerializer.Serialize(Current, options);
         File.WriteAllText(SettingsPath, json);
+        return true;
       }
       catch (Exception ex)
       {
+        error = ex.Message;
         System.Diagnostics.Debug.WriteLine($"DomainSettings.Save failed: {ex.Message}");
+        return false;
       }
     }
 

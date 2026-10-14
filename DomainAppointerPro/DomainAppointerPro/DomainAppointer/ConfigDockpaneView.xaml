@@ -10,30 +10,19 @@
 
   <UserControl.Resources>
     <Style TargetType="TextBlock">
-      <Setter Property="Foreground" Value="#1A1A1A"/>
       <Setter Property="Margin" Value="0,2,0,2"/>
     </Style>
     <Style TargetType="ComboBox">
       <Setter Property="Margin" Value="0,2,0,6"/>
       <Setter Property="Height" Value="26"/>
-      <Setter Property="Foreground" Value="#1A1A1A"/>
-      <Setter Property="Background" Value="#FFFFFF"/>
-      <Setter Property="BorderBrush" Value="#666666"/>
       <Setter Property="FontSize" Value="13"/>
     </Style>
     <Style TargetType="ComboBoxItem">
-      <Setter Property="Foreground" Value="#1A1A1A"/>
-      <Setter Property="Background" Value="#FFFFFF"/>
       <Setter Property="Padding" Value="6,3"/>
-    </Style>
-    <Style TargetType="GroupBox">
-      <Setter Property="Foreground" Value="#1A1A1A"/>
-      <Setter Property="BorderBrush" Value="#888888"/>
     </Style>
     <Style TargetType="Button">
       <Setter Property="Padding" Value="10,4"/>
       <Setter Property="Margin" Value="4,0,0,0"/>
-      <Setter Property="Foreground" Value="#1A1A1A"/>
     </Style>
   </UserControl.Resources>
 
@@ -55,8 +44,9 @@
           <ColumnDefinition Width="*"/>
           <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
-        <ComboBox ItemsSource="{Binding LayerNames}"
-                  SelectedItem="{Binding SelectedLayerName, Mode=TwoWay}"
+        <ComboBox ItemsSource="{Binding LayerItems}"
+                  SelectedItem="{Binding SelectedLayer, Mode=TwoWay}"
+                  DisplayMemberPath="Display"
                   IsEditable="False"/>
         <Button Grid.Column="1" Content="Refresh"
                 Command="{Binding RefreshLayersCommand}"
@@ -75,31 +65,41 @@
     <!-- Status -->
     <TextBlock Grid.Row="2" Text="{Binding StatusMessage}"
                TextWrapping="Wrap" Margin="0,6,0,8"
-               FontStyle="Italic" Foreground="#333333"/>
+               FontStyle="Italic"/>
 
     <!-- Slot mappings -->
     <GroupBox Grid.Row="3" Header="Map Domain Codes to Slots (00-19 + Null)" Padding="6">
-      <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <ItemsControl ItemsSource="{Binding SlotMappings}">
-          <ItemsControl.ItemTemplate>
-            <DataTemplate>
-              <Grid Margin="0,3">
-                <Grid.ColumnDefinitions>
-                  <ColumnDefinition Width="50"/>
-                  <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-                <TextBlock Text="{Binding Slot}" VerticalAlignment="Center" FontWeight="SemiBold"/>
-                <ComboBox Grid.Column="1"
-                          ItemsSource="{Binding AvailableCodes}"
-                          SelectedValue="{Binding SelectedCode, Mode=TwoWay}"
-                          SelectedValuePath="Code"
-                          DisplayMemberPath="Display"
-                          IsEditable="False"/>
-              </Grid>
-            </DataTemplate>
-          </ItemsControl.ItemTemplate>
-        </ItemsControl>
-      </ScrollViewer>
+      <DockPanel>
+        <TextBlock DockPanel.Dock="Top" TextWrapping="Wrap" FontSize="11" Margin="0,0,0,6"
+                   Text="Pick (unmapped) or Clear to remove a slot mapping. Null with no mapping clears the field; map a code to Null to write that coded value (use this for non-nullable N/A / Unknown domains)."/>
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+          <ItemsControl ItemsSource="{Binding SlotMappings}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Grid Margin="0,3">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="50"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Text="{Binding Slot}" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                  <ComboBox Grid.Column="1"
+                            ItemsSource="{Binding AvailableCodes}"
+                            SelectedValue="{Binding SelectedCode, Mode=TwoWay}"
+                            SelectedValuePath="Code"
+                            DisplayMemberPath="Display"
+                            IsEditable="False"/>
+                  <Button Grid.Column="2" Content="Clear"
+                          Command="{Binding DataContext.ClearSlotCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                          CommandParameter="{Binding Slot}"
+                          ToolTip="Unmap this slot"
+                          MinWidth="56"/>
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
+      </DockPanel>
     </GroupBox>
 
     <!-- Save -->
@@ -108,7 +108,7 @@
               FontWeight="SemiBold" MinWidth="140"/>
     </StackPanel>
 
-    <TextBlock Grid.Row="5" TextWrapping="Wrap" Foreground="#333333" FontSize="11"
+    <TextBlock Grid.Row="5" TextWrapping="Wrap" FontSize="11"
                Text="After saving, use the Domain 00-19 / Null buttons on the Add-In tab (or assign keyboard shortcuts via Customize → Keyboard Shortcuts)."/>
   </Grid>
 </UserControl>
