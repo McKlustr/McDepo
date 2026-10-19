@@ -51,7 +51,7 @@ namespace DomainAppointerPro.DomainAppointer
       ApplyOutcome outcome;
       try
       {
-        outcome = await QueuedTask.Run(() => ApplyOnMct(settings, code));
+        outcome = await QueuedTask.Run(() => ApplyOnMct(settings, code, isNullSlot));
       }
       catch (Exception ex)
       {
