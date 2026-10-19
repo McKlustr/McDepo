@@ -4,13 +4,15 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
-using ArcGIS.Core.Data;
 using ArcGIS.Desktop.Framework;
 using ArcGIS.Desktop.Framework.Contracts;
 using ArcGIS.Desktop.Framework.Threading.Tasks;
 using ArcGIS.Desktop.Mapping;
+using MessageBox = ArcGIS.Desktop.Framework.Dialogs.MessageBox;
 
 namespace DomainAppointerPro.DomainAppointer
 {
@@ -18,13 +20,17 @@ namespace DomainAppointerPro.DomainAppointer
   {
     private const string _dockPaneID = "DomainAppointerPro_ConfigPane";
 
+    private Task _loadSettingsTask;
+    private bool _suppressLayerLoad;
+    private int _loadGen;
+
     protected ConfigDockpaneViewModel()
     {
       // Explicitly host the WPF view so the dockpane always shows content
       this.Content = new ConfigDockpaneView { DataContext = this };
 
-      RefreshLayersCommand = new RelayCommand(() => { _ = RefreshLayersAsync(); });
-      SaveCommand = new RelayCommand(() => _ = SaveSettingsAsync());
+      RefreshLayersCommand = new RelayCommand(() => { _ = RunSafe(() => RefreshLayersAsync(preserveSelection: true)); });
+      SaveCommand = new RelayCommand(() => { _ = RunSafe(SaveSettingsAsync); });
       ClearSlotCommand = new RelayCommand<string>(ClearSlot);
     }
 
@@ -37,22 +43,23 @@ namespace DomainAppointerPro.DomainAppointer
 
     #region Properties
 
-    private ObservableCollection<string> _layerNames = new ObservableCollection<string>();
-    public ObservableCollection<string> LayerNames
+    private ObservableCollection<LayerItem> _layerItems = new ObservableCollection<LayerItem>();
+    public ObservableCollection<LayerItem> LayerItems
     {
-      get => _layerNames;
-      set { _layerNames = value; OnPropertyChanged(); }
+      get => _layerItems;
+      set { _layerItems = value; OnPropertyChanged(); }
     }
 
-    private string _selectedLayerName;
-    public string SelectedLayerName
+    private LayerItem _selectedLayer;
+    public LayerItem SelectedLayer
     {
-      get => _selectedLayerName;
+      get => _selectedLayer;
       set
       {
-        _selectedLayerName = value;
+        _selectedLayer = value;
         OnPropertyChanged();
-        _ = LoadFieldsForLayerAsync();
+        if (!_suppressLayerLoad)
+          _ = RunSafe(LoadFieldsForLayerAsync);
       }
     }
 
@@ -71,7 +78,7 @@ namespace DomainAppointerPro.DomainAppointer
       {
         _selectedFieldName = value;
         OnPropertyChanged();
-        _ = LoadDomainCodesAsync();
+        _ = RunSafe(LoadDomainCodesAsync);
       }
     }
 
@@ -105,166 +112,213 @@ namespace DomainAppointerPro.DomainAppointer
     protected override void OnShow(bool isVisible)
     {
       if (isVisible)
-        _ = LoadFromSettingsAsync();
+        _ = RunSafe(OnShowAsync);
     }
 
     protected override async Task InitializeAsync()
     {
       await base.InitializeAsync();
-      await LoadFromSettingsAsync();
+      await EnsureSettingsLoadedAsync();
+    }
+
+    private async Task OnShowAsync()
+    {
+      bool alreadyLoaded = _loadSettingsTask != null && _loadSettingsTask.IsCompleted;
+      await EnsureSettingsLoadedAsync();
+      if (alreadyLoaded)
+        await RefreshLayersAsync(preserveSelection: true);
+    }
+
+    private Task EnsureSettingsLoadedAsync()
+    {
+      return _loadSettingsTask ?? (_loadSettingsTask = LoadFromSettingsAsync());
     }
 
     private async Task LoadFromSettingsAsync()
     {
-      await RefreshLayersAsync();
+      await RefreshLayersAsync(preserveSelection: false);
 
       var s = DomainSettings.Current;
-      if (!string.IsNullOrEmpty(s.LayerName) && LayerNames.Contains(s.LayerName))
-        SelectedLayerName = s.LayerName;
+      LayerItem match = null;
+      if (!string.IsNullOrEmpty(s.LayerUri))
+      {
+        match = LayerItems.FirstOrDefault(i =>
+          string.Equals(i.Uri, s.LayerUri, StringComparison.OrdinalIgnoreCase));
+      }
+      if (match == null && !string.IsNullOrEmpty(s.LayerName))
+      {
+        match = LayerItems.FirstOrDefault(i =>
+          string.Equals(i.Name, s.LayerName, StringComparison.OrdinalIgnoreCase));
+      }
+
+      if (match != null)
+        SelectedLayer = match;
     }
 
-    private async Task RefreshLayersAsync()
+    private async Task RefreshLayersAsync(bool preserveSelection)
     {
-      await QueuedTask.Run(() =>
+      string keepUri = preserveSelection ? SelectedLayer?.Uri : null;
+      string keepName = preserveSelection ? SelectedLayer?.Name : null;
+
+      List<LayerItem> items = await QueuedTask.Run(() =>
+        LayerResolver.ListFeatureLayers(MapView.Active?.Map));
+
+      _suppressLayerLoad = true;
+      try
       {
-        var names = new List<string>();
-        var map = MapView.Active?.Map;
-        if (map != null)
+        LayerItems.Clear();
+        foreach (var item in items)
+          LayerItems.Add(item);
+
+        LayerItem match = null;
+        if (!string.IsNullOrEmpty(keepUri))
         {
-          foreach (var fl in map.GetLayersAsFlattenedList().OfType<FeatureLayer>())
-          {
-            names.Add(fl.Name);
-          }
+          match = LayerItems.FirstOrDefault(i =>
+            string.Equals(i.Uri, keepUri, StringComparison.OrdinalIgnoreCase));
+        }
+        if (match == null && !string.IsNullOrEmpty(keepName))
+        {
+          match = LayerItems.FirstOrDefault(i =>
+            string.Equals(i.Name, keepName, StringComparison.OrdinalIgnoreCase));
         }
 
-        System.Windows.Application.Current.Dispatcher.Invoke(() =>
-        {
-          LayerNames.Clear();
-          foreach (var n in names.OrderBy(x => x))
-            LayerNames.Add(n);
-          StatusMessage = names.Count == 0
-            ? "No feature layers found in the active map."
-            : $"{names.Count} feature layer(s) available.";
-        });
-      });
+        SelectedLayer = match;
+      }
+      finally
+      {
+        _suppressLayerLoad = false;
+      }
+
+      if (SelectedLayer == null)
+      {
+        FieldNames.Clear();
+        AvailableCodes.Clear();
+        SlotMappings.Clear();
+      }
+
+      StatusMessage = LayerItems.Count == 0
+        ? "No feature layers found in the active map."
+        : $"{LayerItems.Count} feature layer(s) available.";
     }
 
     private async Task LoadFieldsForLayerAsync()
     {
+      int gen = Interlocked.Increment(ref _loadGen);
       FieldNames.Clear();
       AvailableCodes.Clear();
-      if (string.IsNullOrEmpty(SelectedLayerName)) return;
 
+      var layer = SelectedLayer;
+      if (layer == null)
+        return;
+
+      var fieldsWithDomain = new List<string>();
       await QueuedTask.Run(() =>
       {
         var map = MapView.Active?.Map;
         if (map == null) return;
 
-        var fl = map.GetLayersAsFlattenedList()
-                    .OfType<FeatureLayer>()
-                    .FirstOrDefault(l => string.Equals(l.Name, SelectedLayerName, StringComparison.OrdinalIgnoreCase));
+        var fl = LayerResolver.Find(map, layer.Uri, layer.Name);
         if (fl == null) return;
 
-        var fieldsWithDomain = new List<string>();
         try
         {
           using (var table = fl.GetTable())
           {
             if (table == null) return;
-            var def = table.GetDefinition();
-            foreach (var field in def.GetFields())
-            {
-              var domain = field.GetDomain();
-              if (domain is CodedValueDomain)
-              {
-                fieldsWithDomain.Add(field.Name);
-              }
-            }
+            fieldsWithDomain.AddRange(DomainLookup.GetCodedDomainFieldNames(table));
           }
         }
         catch { }
-
-        System.Windows.Application.Current.Dispatcher.Invoke(() =>
-        {
-          FieldNames.Clear();
-          foreach (var f in fieldsWithDomain.OrderBy(x => x))
-            FieldNames.Add(f);
-
-          // restore previous field if still valid
-          var prev = DomainSettings.Current.FieldName;
-          if (!string.IsNullOrEmpty(prev) && FieldNames.Contains(prev))
-            SelectedFieldName = prev;
-          else if (FieldNames.Count > 0)
-            SelectedFieldName = FieldNames[0];
-
-          StatusMessage = fieldsWithDomain.Count == 0
-            ? "Selected layer has no coded-value domain fields."
-            : $"{fieldsWithDomain.Count} domain field(s) found.";
-        });
       });
+
+      if (gen != _loadGen)
+        return;
+
+      FieldNames.Clear();
+      foreach (var f in fieldsWithDomain.OrderBy(x => x))
+        FieldNames.Add(f);
+
+      var prev = DomainSettings.Current.FieldName;
+      string matchField = FieldNames.FirstOrDefault(f =>
+        string.Equals(f, prev, StringComparison.OrdinalIgnoreCase));
+      if (matchField != null)
+        SelectedFieldName = matchField;
+      else if (FieldNames.Count > 0)
+        SelectedFieldName = FieldNames[0];
+      else
+        SelectedFieldName = null;
+
+      StatusMessage = fieldsWithDomain.Count == 0
+        ? "Selected layer has no coded-value domain fields."
+        : $"{fieldsWithDomain.Count} domain field(s) found.";
     }
 
     private async Task LoadDomainCodesAsync()
     {
+      int gen = Interlocked.Increment(ref _loadGen);
       AvailableCodes.Clear();
-      if (string.IsNullOrEmpty(SelectedLayerName) || string.IsNullOrEmpty(SelectedFieldName)) return;
 
+      var layer = SelectedLayer;
+      if (layer == null || string.IsNullOrEmpty(SelectedFieldName))
+      {
+        BuildSlotMappings();
+        return;
+      }
+
+      var codes = new List<DomainCodeItem>();
+      string missingLayer = null;
       await QueuedTask.Run(() =>
       {
-        var codes = new List<DomainCodeItem>();
         try
         {
           var map = MapView.Active?.Map;
-          var fl = map?.GetLayersAsFlattenedList()
-                       .OfType<FeatureLayer>()
-                       .FirstOrDefault(l => string.Equals(l.Name, SelectedLayerName, StringComparison.OrdinalIgnoreCase));
-          if (fl == null) return;
+          var fl = LayerResolver.Find(map, layer.Uri, layer.Name);
+          if (fl == null)
+          {
+            missingLayer = layer.Name;
+            return;
+          }
 
           using (var table = fl.GetTable())
           {
-            var def = table.GetDefinition();
-            var field = def.GetFields().FirstOrDefault(f =>
-              string.Equals(f.Name, SelectedFieldName, StringComparison.OrdinalIgnoreCase));
-            if (field == null) return;
-
-            var domain = field.GetDomain() as CodedValueDomain;
-            if (domain == null) return;
-
-            var pairs = domain.GetCodedValuePairs();
-            foreach (var kvp in pairs)
-            {
-              codes.Add(new DomainCodeItem
-              {
-                Code = kvp.Key?.ToString() ?? "",
-                Description = kvp.Value ?? ""
-              });
-            }
+            codes.AddRange(DomainLookup.GetCodedValues(table, SelectedFieldName));
           }
         }
         catch { }
-
-        System.Windows.Application.Current.Dispatcher.Invoke(() =>
-        {
-          AvailableCodes.Clear();
-          foreach (var c in codes.OrderBy(x => x.Code))
-            AvailableCodes.Add(c);
-
-          BuildSlotMappings();
-          StatusMessage = $"Domain has {codes.Count} coded value(s). Map them to slots below.";
-        });
       });
+
+      if (gen != _loadGen)
+        return;
+
+      AvailableCodes.Clear();
+      AvailableCodes.Add(DomainCodeItem.Unmapped);
+      foreach (var c in codes)
+        AvailableCodes.Add(c);
+
+      BuildSlotMappings();
+
+      if (!string.IsNullOrEmpty(missingLayer))
+      {
+        StatusMessage = $"Configured layer \"{missingLayer}\" was not found in the active map.";
+      }
+      else
+      {
+        StatusMessage = codes.Count == 0
+          ? "No coded values found for this field (including subtype domains)."
+          : $"Domain has {codes.Count} coded value(s) (including subtype domains). Map them to slots below.";
+      }
     }
 
     private void BuildSlotMappings()
     {
       SlotMappings.Clear();
+      bool restore = ShouldRestoreSavedMappings();
       var s = DomainSettings.Current;
 
-      // Null first
       SlotMappings.Add(new SlotMappingItem
       {
         Slot = "Null",
-        SelectedCode = s.GetCodeForSlot("Null") ?? "",
+        SelectedCode = SlotCodeForUi(restore, s, "Null"),
         AvailableCodes = AvailableCodes
       });
 
@@ -274,34 +328,58 @@ namespace DomainAppointerPro.DomainAppointer
         SlotMappings.Add(new SlotMappingItem
         {
           Slot = key,
-          SelectedCode = s.GetCodeForSlot(key) ?? "",
+          SelectedCode = SlotCodeForUi(restore, s, key),
           AvailableCodes = AvailableCodes
         });
       }
     }
 
+    private bool ShouldRestoreSavedMappings()
+    {
+      var s = DomainSettings.Current;
+      var layer = SelectedLayer;
+      if (layer == null || string.IsNullOrEmpty(SelectedFieldName) || string.IsNullOrEmpty(s.FieldName))
+        return false;
+
+      if (!string.Equals(SelectedFieldName, s.FieldName, StringComparison.OrdinalIgnoreCase))
+        return false;
+
+      if (!string.IsNullOrEmpty(s.LayerUri) && !string.IsNullOrEmpty(layer.Uri))
+        return string.Equals(s.LayerUri, layer.Uri, StringComparison.OrdinalIgnoreCase);
+
+      return string.Equals(s.LayerName, layer.Name, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string SlotCodeForUi(bool restore, DomainSettings settings, string slot)
+    {
+      if (!restore)
+        return DomainCodeItem.UnmappedCode;
+
+      string saved = settings.GetCodeForSlot(slot);
+      return string.IsNullOrEmpty(saved) ? DomainCodeItem.UnmappedCode : saved;
+    }
+
     private async Task SaveSettingsAsync()
     {
-      if (string.IsNullOrEmpty(SelectedLayerName) || string.IsNullOrEmpty(SelectedFieldName))
+      if (SelectedLayer == null || string.IsNullOrEmpty(SelectedFieldName))
       {
         StatusMessage = "Select a layer and field before saving.";
         return;
       }
 
       var s = DomainSettings.Current;
-      s.LayerName = SelectedLayerName;
+      s.LayerName = SelectedLayer.Name ?? "";
+      s.LayerUri = SelectedLayer.Uri ?? "";
       s.FieldName = SelectedFieldName;
 
-      // Capture URI on MCT before writing settings
       await QueuedTask.Run(() =>
       {
-        var fl = MapView.Active?.Map?.GetLayersAsFlattenedList()
-                      .OfType<FeatureLayer>()
-                      .FirstOrDefault(l => string.Equals(l.Name, SelectedLayerName, StringComparison.OrdinalIgnoreCase));
+        var fl = LayerResolver.Find(MapView.Active?.Map, s.LayerUri, s.LayerName);
         if (fl != null)
-          s.LayerUri = fl.URI;
-        else
-          s.LayerUri = "";
+        {
+          s.LayerUri = fl.URI ?? s.LayerUri;
+          s.LayerName = fl.Name ?? s.LayerName;
+        }
       });
 
       s.SlotToCode.Clear();
@@ -309,12 +387,24 @@ namespace DomainAppointerPro.DomainAppointer
 
       foreach (var item in SlotMappings)
       {
-        s.SlotToCode[item.Slot] = item.SelectedCode ?? "";
-        var match = AvailableCodes.FirstOrDefault(c => c.Code == item.SelectedCode);
-        s.SlotToDescription[item.Slot] = match?.Description ?? item.SelectedCode ?? "";
+        string code = DomainCodeItem.Normalize(item.SelectedCode);
+        s.SlotToCode[item.Slot] = code;
+        var match = AvailableCodes.FirstOrDefault(c =>
+          !DomainCodeItem.IsUnmapped(c.Code) && c.Code == code);
+        s.SlotToDescription[item.Slot] = match?.Description ?? code;
       }
 
-      DomainSettings.Save();
+      if (!DomainSettings.Save(out string error))
+      {
+        StatusMessage = $"Save failed: {error}";
+        MessageBox.Show(
+          $"Could not save Domain Appointer settings:\n{error}",
+          "Domain Appointer",
+          MessageBoxButton.OK,
+          MessageBoxImage.Error);
+        return;
+      }
+
       StatusMessage = "Settings saved. You can now use the Domain 00-19 and Null buttons (or assign keyboard shortcuts).";
     }
 
@@ -322,7 +412,19 @@ namespace DomainAppointerPro.DomainAppointer
     {
       var item = SlotMappings.FirstOrDefault(x => x.Slot == slot);
       if (item != null)
-        item.SelectedCode = "";
+        item.SelectedCode = DomainCodeItem.UnmappedCode;
+    }
+
+    private async Task RunSafe(Func<Task> work)
+    {
+      try
+      {
+        await work();
+      }
+      catch (Exception ex)
+      {
+        StatusMessage = ex.Message;
+      }
     }
 
     protected void OnPropertyChanged([CallerMemberName] string name = null)
@@ -333,9 +435,35 @@ namespace DomainAppointerPro.DomainAppointer
 
   public class DomainCodeItem
   {
+    // Non-empty sentinel so WPF ComboBox SelectedValue can bind (empty string does not).
+    public const string UnmappedCode = "__unmapped__";
+
+    public static DomainCodeItem Unmapped { get; } = new DomainCodeItem
+    {
+      Code = UnmappedCode,
+      Description = "(unmapped)"
+    };
+
+    public static bool IsUnmapped(string code) =>
+      string.IsNullOrEmpty(code) ||
+      string.Equals(code, UnmappedCode, StringComparison.Ordinal);
+
+    public static string Normalize(string code) =>
+      IsUnmapped(code) ? "" : code;
+
     public string Code { get; set; }
     public string Description { get; set; }
-    public string Display => string.IsNullOrEmpty(Description) ? Code : $"{Code}  –  {Description}";
+    public string Display
+    {
+      get
+      {
+        if (IsUnmapped(Code))
+          return "(unmapped)";
+        if (string.IsNullOrEmpty(Description))
+          return Code;
+        return $"{Code}  –  {Description}";
+      }
+    }
     public override string ToString() => Display;
   }
 
@@ -359,7 +487,6 @@ namespace DomainAppointerPro.DomainAppointer
     }
   }
 
-  // Simple RelayCommand
   public class RelayCommand : ICommand
   {
     private readonly Action _execute;
@@ -398,7 +525,23 @@ namespace DomainAppointerPro.DomainAppointer
       remove { CommandManager.RequerySuggested -= value; }
     }
 
-    public bool CanExecute(object parameter) => _canExecute == null || _canExecute((T)parameter);
-    public void Execute(object parameter) => _execute((T)parameter);
+    public bool CanExecute(object parameter)
+    {
+      if (_canExecute == null)
+        return true;
+      if (parameter is T typed)
+        return _canExecute(typed);
+      if (parameter == null)
+        return _canExecute(default);
+      return false;
+    }
+
+    public void Execute(object parameter)
+    {
+      if (parameter is T typed)
+        _execute(typed);
+      else if (parameter == null)
+        _execute(default);
+    }
   }
 }
